@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #09090b;
+  --color-surface: #18181b;
+  --color-border: #27272a;
+
+  --color-primary: #10b981;
+  --color-surge: #f43f5e;
+  --color-accent: #0ea5e9;
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Base styles */
+body {
+  background-color: var(--color-background);
+  color: #f4f4f5;
+  /* zinc-100 */
+  -webkit-font-smoothing: antialiased;
+}
