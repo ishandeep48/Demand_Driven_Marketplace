@@ -28,6 +28,11 @@ const productSchema = new mongoose.Schema({
   category: {
     type: String,
   },
+  maxQuantity:{
+    type:Number,
+    min:1,
+    default:5,
+  }
 });
 
 export default mongoose.model("Product", productSchema);

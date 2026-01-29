@@ -7,6 +7,7 @@ interface productData {
   basePrice: number;
   stock: number;
   category: string;
+  maxQuantity?: Number;
 }
 
 router.get("/products", async (req: Request, res: Response) => {
@@ -58,6 +59,7 @@ router.post("/add-product", async (req: Request, res: Response) => {
       currentPrice: data.basePrice,
       stock: data.stock,
       category: data.category,
+      maxQuantity: data.maxQuantity || 5,
     });
     await product.save();
     return res.status(201).json({

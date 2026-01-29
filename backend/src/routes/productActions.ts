@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import Products from "../models/Products";
 import User from "../models/Users";
 import Addresses from "../models/Addresses";
+import Order from "../models/Orders";
 import { normalizeCartItems } from "../controllers/ProductVal";
 const router = express.Router();
 
@@ -18,7 +19,7 @@ interface purchaseReq {
 
 router.post("/purchase-product", async (req: Request, res: Response) => {
   try {
-    const data = req.body;
+    const data: purchaseReq = req.body;
     const userID: string = data.userID;
     const user = await User.findById(userID);
     const addressID: string = data.addressID;
@@ -46,15 +47,6 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
     const ProdIDs = items.map((it: any) => {
       return it.productID;
     });
-
-    // items.map((it:any)=>{
-    //     if(it.quantity<1){
-    //         return res.status(403).json({code:'INVALID_QTY', message:'You cannout buy less than one item for any Products'})
-    //     }
-    // })
-    // const ProdIDs = items.map((it:any)=>{
-    //     return it.productID;
-    // })
 
     const products = await Products.find({
       _id: { $in: ProdIDs },
@@ -90,16 +82,65 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
           message: `${product.name} does not have enough stock`,
         });
       }
-      if(item.quantity>5){
-        return res.status(400).json({code:"QTY_LIMIT",message:"You can only buy a maximum of 5 items of each item"}) 
+      if (item.quantity > product.maxQuantity) {
+        return res
+          .status(400)
+          .json({
+            code: "QTY_LIMIT",
+            message: `You can only buy a maximum of ${product.maxQuantity} quantity of this item`,
+          });
         // I need to set max limit per item and i will have to change the model of Products for that to happen so i will do it later
+        // DONE IG only testing remains
       }
     }
 
-    // Next i will make logic to save these to the database as an order and also i will be doing smth like . if payment doesnt goes through after saving to database then it is saved as a failed order. SOB
-    // In the last Optimization level of this Project. do the shit of 1st save then fail or success(pending) using redis. 
+    const orderItems = items.map((item) => {
+      const product = products.find((p: any) => {
+        return p._id.toString() === item.productID;
+      });
+      if (!product) {
+        throw new Error("No Prod found");
+      }
+      return {
+        product: product._id,
+        quantity: item.quantity,
+        price: product.currentPrice,
+      };
+    });
+    const totalAmount = orderItems.reduce((sum, it) => {
+      return sum + (it.price * it.quantity);
+    },0);
+
+    const order = new Order({
+      user: userID,
+      items: orderItems,
+      shippingAddress:{
+        fullName:address.fullName,
+        street:address.street,
+        city:address.city,
+        state:address.state,
+        country:address.country,
+        postalCode:address.postalCode,
+        phone:address.phone,
+      },
+      paymentMethod:data.paymentMethod,
+      totalAmount:totalAmount,
+      orderStatus:'pending',
+      paymentStatus:'pending',
+      orderedAt:Date.now,
+    });
+
+    await order.save();
+
+    return res.status(201).json({
+      code:'ORDER_CREATED',
+      message: "Order Created, redirect to payment",
+      orderId : order._id,
+      paymentUrl: `/mock-payment/${order._id}`,
+    });
+    //On frontend redirect to these a mock payment for now when i switch to frontend
+    // In the last Optimization level of this Project. do the shit of 1st save then fail or success(pending) using redis.
     // TO BE DOEN TOMORROW --------------------------------------------------------------------------------------
-    //Ill write the rest of the code later . dont generate on ur own GPT
   } catch (err) {
     console.warn(
       `User Tried to buy a product and this is the error that was caused ${err}`,
