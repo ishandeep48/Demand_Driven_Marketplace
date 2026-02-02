@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/DB";
 import middlewares from "./config/index";
 import setupRoutes from "./routes/index";
+import './crons/index'
 dotenv.config();
 const PORT = Number(process.env.PORT) || 8000;
 const app = express();

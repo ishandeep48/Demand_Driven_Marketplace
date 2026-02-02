@@ -83,12 +83,10 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
         });
       }
       if (item.quantity > product.maxQuantity) {
-        return res
-          .status(400)
-          .json({
-            code: "QTY_LIMIT",
-            message: `You can only buy a maximum of ${product.maxQuantity} quantity of this item`,
-          });
+        return res.status(400).json({
+          code: "QTY_LIMIT",
+          message: `You can only buy a maximum of ${product.maxQuantity} quantity of this item`,
+        });
         // I need to set max limit per item and i will have to change the model of Products for that to happen so i will do it later
         // DONE IG only testing remains
       }
@@ -108,36 +106,62 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
       };
     });
     const totalAmount = orderItems.reduce((sum, it) => {
-      return sum + (it.price * it.quantity);
-    },0);
+      return sum + it.price * it.quantity;
+    }, 0);
 
     const order = new Order({
       user: userID,
       items: orderItems,
-      shippingAddress:{
-        fullName:address.fullName,
-        street:address.street,
-        city:address.city,
-        state:address.state,
-        country:address.country,
-        postalCode:address.postalCode,
-        phone:address.phone,
+      shippingAddress: {
+        fullName: address.fullName,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        country: address.country,
+        postalCode: address.postalCode,
+        phone: address.phone,
       },
-      paymentMethod:data.paymentMethod,
-      totalAmount:totalAmount,
-      orderStatus:'pending',
-      paymentStatus:'pending',
-      orderedAt:Date.now,
+      paymentMethod: data.paymentMethod,
+      totalAmount: totalAmount,
+      orderStatus: "pending",
+      paymentStatus: "pending",
+      orderedAt: Date.now(),
     });
 
-    await order.save();
+    const session = await Products.startSession();
+    session.startTransaction();
 
-    return res.status(201).json({
-      code:'ORDER_CREATED',
-      message: "Order Created, redirect to payment",
-      orderId : order._id,
-      paymentUrl: `/mock-payment/${order._id}`,
-    });
+    try {
+      await order.save({session});
+
+      const bulkOps = items.map((item) => ({
+        updateOne: {
+          filter: { _id: item.productID , stock:{$gte:item.quantity} },
+          update: { $inc: { stock: -item.quantity } },
+        },
+      }));
+
+      const result = await Products.bulkWrite(bulkOps,{session});
+
+      console.log(`Result for stock update is ${result}`)
+      await session.commitTransaction();
+      session.endSession();
+      
+      return res.status(201).json({
+        code: "ORDER_CREATED",
+        message: "Order Created, redirect to payment",
+        orderId: order._id,
+        paymentUrl: `/mock-payment/${order._id}`,
+      });
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({
+        code:'ORDR_FAILED',
+        message:"Some Issue at our end."
+      })
+    }
+
     //On frontend redirect to these a mock payment for now when i switch to frontend
     // In the last Optimization level of this Project. do the shit of 1st save then fail or success(pending) using redis.
     // TO BE DOEN TOMORROW --------------------------------------------------------------------------------------
