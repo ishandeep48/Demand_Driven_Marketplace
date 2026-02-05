@@ -8,6 +8,7 @@ cron.schedule("*/5 * * * *",async()=>{
         {
             paymentStatus: "pending",
             orderedAt:{ $lte: new Date(Date.now()- 5*60*1000)},
+            // fail all payments older than 5 minutes
         },
         {
             orderStatus:"failed",

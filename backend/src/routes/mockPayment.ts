@@ -120,6 +120,5 @@ router.post(
     }
   },
 );
-// make fir payment abort and fail too and and a cron-job for failed order status
 
 export default router;

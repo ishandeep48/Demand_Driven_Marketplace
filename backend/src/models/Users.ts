@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  userID:{
+    type:String,
+    required:true,
+    unique:true,
+  },
   name: {
     type: String,
     required: true,
@@ -30,7 +35,8 @@ const userSchema = new mongoose.Schema({
   defaultAddress:{
     type:mongoose.Schema.Types.ObjectId,
     ref:'Address'
-  }
+  },
+  
 },{timestamps:true});
 
 export default mongoose.model("User", userSchema);
