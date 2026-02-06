@@ -36,7 +36,14 @@ const userSchema = new mongoose.Schema({
     type:mongoose.Schema.Types.ObjectId,
     ref:'Address'
   },
-  
+  refreshToken:{
+    type:String,
+    select:false,
+  },
+  refreshTokenAt:{
+    type:Date,
+    required:true,
+  }
 },{timestamps:true});
 
 export default mongoose.model("User", userSchema);

@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import { decode } from "node:punycode";
 import Users from "../models/Users";
+import bcrypt from 'bcrypt';
 dotenv.config();
 const SECRET_KEY: string = process.env.AccessSecretKey || "";
 interface AuthReq extends Request {
@@ -36,7 +37,7 @@ export async function authUserToken(
       console.log("Access Token Expired");
 
       const refreshToken = req.cookies.refreshToken;
-
+      const userID = req.cookies.userID;
       if (!refreshToken) {
         return res.status(401).json({
           code: "NO_REFRESH_TOKEN",
@@ -44,12 +45,19 @@ export async function authUserToken(
         });
       }
       try {
-        const user = await Users.findOne({ refreshToken: refreshToken });
+        const user = await Users.findOne({ userID });
         if(!user){
             return res.status(401).json({
                 code:"INVALID_RESP_TKN",
                 message:"Invalid Response Token Sent"
             })
+        }
+        const isTokenValid = await bcrypt.compare(refreshToken,user.refreshToken);
+        if(!isTokenValid){
+          return res.status(401).json({
+            code:"LGN_EXP",
+            message:"Login Expired"
+          })
         }
         const newAccessToken = jwt.sign(
             {
