@@ -21,7 +21,7 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
   try {
     const data: purchaseReq = req.body;
     const userID: string = data.userID;
-    const user = await User.findById(userID);
+    const user = await User.findOne({userID});
     const addressID: string = data.addressID;
     const address = await Addresses.findOne({ _id: addressID, user: userID });
     const items = normalizeCartItems(data.items);
