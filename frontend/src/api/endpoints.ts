@@ -1,4 +1,4 @@
-export const API_BASE_URL = ''; // Relative path for proxy
+export const API_BASE_URL = 'http://localhost:6969';
 
 export const ENDPOINTS = {
     REGISTER: '/register-user',
@@ -10,4 +10,5 @@ export const ENDPOINTS = {
     MOCK_PAYMENT_SUCCESS: '/mock-payment/success',
     MOCK_PAYMENT_FAIL: '/mock-payment/simulateFail',
     MOCK_PAYMENT_ABORT: '/mock-payment/abort',
+    GET_USER_BY_ID: `/get-user-data`,
 };

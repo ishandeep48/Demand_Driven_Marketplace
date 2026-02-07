@@ -17,7 +17,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            await api.post(ENDPOINTS.LOGIN, { email, password });
+            const res = await api.post(ENDPOINTS.LOGIN, { email, password });
 
             // Assuming successful login for now. 
             // In a real app we might fetch user details here if the login response doesn't return them.
@@ -26,14 +26,15 @@ const Login = () => {
             // we'll mock the user object or fetch it if there was a /me endpoint.
             // Given the constraints, I will mock the user data derived from the email for the context.
 
-            const mockUser = {
-                id: 'mock-user-id', // In a real app, this comes from backend
-                name: 'User', // We might not know the name from just login email/pw
-                email: email,
-                role: 'customer' as const,
-            };
+            // const mockUser = {
+            //     id: 'mock-user-id', // In a real app, this comes from backend
+            //     name: 'User', // We might not know the name from just login email/pw
+            //     email: email,
+            //     role: 'customer' as const,
+            // };
 
-            login(mockUser);
+            const data = res.data;
+            login(data.data);
             toast.success('Logged in successfully!');
             navigate('/');
         } catch (error: any) {

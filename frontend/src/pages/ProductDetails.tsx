@@ -31,7 +31,9 @@ const ProductDetails = () => {
         queryKey: ['product', id],
         queryFn: async () => {
             // The prompt says GET /products/:id
+            // console.log("Full URL:", `${api.defaults.baseURL}`);
             const response = await api.get<{ data: Product }>(ENDPOINTS.PRODUCT_DETAILS(id!));
+            // console.log(response.data)
             // Note: Adjust based on actual API response structure. 
             // In useProducts.ts, it was res.json().data. 
             // Here we assume similar wrapper.

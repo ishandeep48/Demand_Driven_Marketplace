@@ -1,7 +1,8 @@
-import { useAuth } from '../context/AuthContext';
 import type { Address, Order } from '../types';
 import { Mail, MapPin, Package, Phone, Edit } from 'lucide-react';
-
+import api from '../api/axios';
+import { ENDPOINTS } from '../api/endpoints';
+import { useEffect, useState } from 'react';
 const MOCK_ADDRESSES: Address[] = [
     {
         id: 'addr_1',
@@ -47,9 +48,25 @@ const MOCK_ORDERS: Order[] = [
 ];
 
 const Profile = () => {
-    const { user } = useAuth();
-    console.log(user)
-    if (!user) return <div className="p-20 text-center">Please login</div>;
+    // const { user } = useAuth();
+    const [user, setUser]: any = useState(null);
+    // const userID = user?.userID;
+    // const res = await api.get(ENDPOINTS.GET_USER_BY_ID(userID));
+    useEffect(() => {
+        // if (!user) return;
+
+        const getUserData = async () => {
+            try {
+                const res = await api.get(ENDPOINTS.GET_USER_BY_ID);
+                // console.log(res.data.data);
+                setUser(res.data.data);
+            } catch (err) {
+                console.log(err)
+            }
+        }
+        getUserData();
+    }, []);
+    if (!user) return <div className="p-20 text-center">Please login or check your internet connection</div>;
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-12">
@@ -62,12 +79,12 @@ const Profile = () => {
                     <div className="bg-surface border border-border rounded-xl p-6">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-black font-bold text-2xl">
-                                {user.name.charAt(0).toUpperCase()}
+                                {user.name?.charAt(0).toUpperCase() || "X"}
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">{user.name}</h2>
+                                <h2 className="text-xl font-bold text-white">{user.name || "Loading..."}</h2>
                                 <div className="flex items-center gap-2 text-zinc-400 text-sm mt-1">
-                                    <Mail size={14} /> {user.email}
+                                    <Mail size={14} /> {user.email || "Loading..."}
                                 </div>
                             </div>
                         </div>

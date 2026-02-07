@@ -50,7 +50,6 @@ router.post("/register-user", async (req: Request, res: Response) => {
         userID,
         name: data.name,
         email: data.email,
-        role: "customer",
       },
       SECRET_KEY,
       { expiresIn: "30m" }
@@ -75,7 +74,8 @@ router.post("/register-user", async (req: Request, res: Response) => {
 
     return res.status(201).json({
       code: "OK",
-      message: "Registered a New User"
+      message: "Registered a New User",
+      user:{userID,role:"customer"}
     })
 
   } catch (err) {
@@ -110,7 +110,6 @@ router.post('/login-user', async (req: Request, res: Response) => {
         userID: user.userID,
         name: user.name,
         email: user.email,
-        role: "customer",
       },
       SECRET_KEY,
       { expiresIn: "30m" }
@@ -135,7 +134,8 @@ router.post('/login-user', async (req: Request, res: Response) => {
     })
     res.json({
       code: "OK",
-      message: "login success"
+      message: "login success",
+      data:{userID:user.userID,role:"customer"}
     })
 
   } catch (err) {
