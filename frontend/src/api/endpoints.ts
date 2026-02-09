@@ -11,4 +11,5 @@ export const ENDPOINTS = {
     MOCK_PAYMENT_FAIL: '/mock-payment/simulateFail',
     MOCK_PAYMENT_ABORT: '/mock-payment/abort',
     GET_USER_BY_ID: `/get-user-data`,
+    ADD_ADDRESS: '/add-user-address',
 };

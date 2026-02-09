@@ -125,7 +125,15 @@ router.post('/login-user', async (req: Request, res: Response) => {
       sameSite: "lax",
       maxAge: 30 * 60 * 1000,
     });
-
+    const userData ={
+      userID:user.userID
+    }
+    res.cookie("userData",userData,{
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 10 * 30 * 24 * 60 * 60 * 1000,
+    })
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -137,7 +145,7 @@ router.post('/login-user', async (req: Request, res: Response) => {
       message: "login success",
       data:{userID:user.userID,role:"customer"}
     })
-
+    
   } catch (err) {
     console.log(err);
     return res.status(500).json({
