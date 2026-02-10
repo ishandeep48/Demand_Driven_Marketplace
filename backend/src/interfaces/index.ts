@@ -12,5 +12,6 @@ export interface addressDetails{
     country:'India' | 'Outside';
     postalCode:string;
     phone:string;
+    isDefault?:boolean;
     // user:string;
 }

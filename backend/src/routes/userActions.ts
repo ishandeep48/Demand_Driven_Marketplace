@@ -1,10 +1,10 @@
 import Users from "../models/Users";
 import mongoose from "mongoose";
 import Addresses from "../models/Addresses";
-import express, { Request, Response } from "express";
+import express, { Request, response, Response } from "express";
 import authCookieVerify from "../controllers/authCookieVerify";
 import { userRequest, addressDetails } from "../interfaces";
-import randNum from '../controllers/randNum';
+import randNum from "../controllers/randNum";
 const router = express.Router();
 
 router.get(
@@ -26,6 +26,10 @@ router.get(
       //please fix and make this api good . dont forget this aint done yet no error handlign has been done
     } catch (err) {
       console.log(err);
+      return res.status(500).json({
+        code:"ERR",
+        message:"Some Error on our end please refresh"
+      })
     }
   },
 );
@@ -65,8 +69,20 @@ router.post(
       //   try {
       //     await session.withTransaction(async () => {
       const randID = randNum();
+      let isDef = false;
+      if (addCount === 0 || data?.isDefault) {
+        isDef = true;
+      }
+      if (addCount != 0 && data?.isDefault) {
+        const addr_id = user.defaultAddress;
+        const address = await Addresses.findById(addr_id);
+        if (address) {
+          address.isDefault = false;
+          address?.save();
+        }
+      }
       const address = new Addresses({
-        addressID:randID,
+        addressID: randID,
         fullName: data.fullName,
         street: data.street,
         city: data.city,
@@ -75,12 +91,12 @@ router.post(
         postalCode: data.postalCode,
         phone: data.phone,
         user: user._id,
-        isDefault: addCount === 0,
+        isDefault: isDef,
       });
       await address.save();
 
       user.addresses.push(address._id);
-      if (addCount === 0) {
+      if (addCount === 0 || data?.isDefault) {
         user.defaultAddress = address._id;
       }
       user.save();
@@ -108,4 +124,97 @@ router.post(
   },
 );
 
+router.post(
+  "/update-user-address",
+  authCookieVerify,
+  async (req: userRequest, res: Response) => {
+    const userData = req.user;
+    console.log("Reached API");
+    try {
+      const data = req.body;
+      const address = await Addresses.findOne({ addressID: data.addressID });
+      if (!address) {
+        return res.status(400).json({
+          code: "NO_ADDR",
+          message: "Please choose a valid address before updating the address",
+        });
+      }
+      address.fullName = data.fullName;
+      address.street = data.street;
+      address.city = data.city;
+      address.state = data.state;
+      address.country = data.country;
+      address.postalCode = data.postalCode;
+      address.phone = data.phone;
+
+      if (data.isDefault) {
+        const user = await Users.findOne({ userID: userData.userID });
+        if (!user) {
+          return res.status(400).json({
+            code: "NO_USR",
+            message: "Please login before updating the address",
+          });
+        }
+        const prevDefAddr = user.defaultAddress;
+        const prevAddress = await Addresses.findById(prevDefAddr);
+        if (!prevAddress) {
+          throw new Error("Couldnt get previos address");
+        }
+        prevAddress.isDefault = false;
+        address.isDefault = true;
+        await prevAddress.save();
+        user.defaultAddress = address._id;
+        await user.save();
+      }else{
+        address.isDefault = false;
+      }
+      await address.save();
+
+      return res.status(200).json({
+        code: "OK",
+        message: "Updated the address",
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        code: "ERR",
+        message: "Some Error on our end please try again later",
+      });
+    }
+  },
+);
+
+router.post('/delete-user-address',authCookieVerify,async(req:userRequest,res:Response)=>{
+  const userData = req.user;
+  try{
+    const data = req.body;
+    const address = await Addresses.findOne({addressID:data.addressID});
+    if(!address){
+      throw new Error("NoSuchAddress");
+    }
+    if(address.isDefault){
+      return res.status(403).json({
+        code:"NOT_ALLOWED",
+        message:"You cannot delete the default address. choose other address as default before doing so"
+      })
+    }
+    const user = await Users.findOne({userID:userData.userID});
+    if(!user){
+      throw new Error('NoUser');
+    }
+    user.addresses = user.addresses.filter(id => id.toString() !== address._id.toString());
+    await user.save();
+    await Addresses.deleteOne({addressID:data.addressID});
+    return res.status(200).json({
+      code:"OK",
+      message:"Address deleted successfully"
+    })
+  }catch(err){
+    console.log(err);
+    return res.json(500).json({
+      code:"ERR",
+      message:"Some error on our end please delete later"
+    })
+  }
+})
 export default router;

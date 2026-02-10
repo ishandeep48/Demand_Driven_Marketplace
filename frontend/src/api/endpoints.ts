@@ -12,4 +12,7 @@ export const ENDPOINTS = {
     MOCK_PAYMENT_ABORT: '/mock-payment/abort',
     GET_USER_BY_ID: `/get-user-data`,
     ADD_ADDRESS: '/add-user-address',
+    UPDATE_ADDRESS: '/update-user-address',
+    TEST: "/test",
+    DELETE_ADDRESS: '/delete-user-address',
 };

@@ -1,10 +1,10 @@
 import express,{Request,Response} from 'express';
 const router= express.Router()
 
-router.get('/test-get',(req:Request,res:Response)=>{
+router.get('/test',(req:Request,res:Response)=>{
     console.log('get hit')
 })
-router.post('/test-post',(req:Request,res:Response)=>{
+router.post('/test',(req:Request,res:Response)=>{
     const data = req.body;
     console.log(data);
 })

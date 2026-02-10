@@ -1,9 +1,9 @@
 Next Todo
-Create the Address thing ( I have done that it shows the new address and it also saves . the next thing to do is that to make it update as i do using the popup modal)
+Create the Address thing ( I have done that it shows the new address and it also saves . the next thing to do is that to make it update as i do using the popup modal) -- DONE
 1st make then save address -- DONE
-then later you can list down all teh addresses and select the default -- DONE ( just the default one left)
-fix userAction.ts
-
+then later you can list down all teh addresses and select the default -- DONE ( just the default one left) -- DONE
+fix userAction.ts -- DONE
+also added that you can now delete addresses -- DONE
 
 then make them allow orders
 (this may contain more things which need to be done)

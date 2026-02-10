@@ -1,9 +1,10 @@
 import type { Order } from '../types';
-import { Mail, MapPin, Package, Phone, Edit } from 'lucide-react';
+import { Mail, MapPin, Package, Phone, Edit, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import { ENDPOINTS } from '../api/endpoints';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { sub } from 'framer-motion/client';
 
 // Mock Orders as API is not ready
 const MOCK_ORDERS: Order[] = [
@@ -38,12 +39,14 @@ const INDIAN_STATES = [
 ];
 
 const Profile = () => {
+    const [editAddressID, setEditAddressID] = useState(null);
     const getUserData = async () => {
         try {
             const res = await api.get(ENDPOINTS.GET_USER_BY_ID);
             // console.log(res.data.data);
             console.log(res.data.data)
-            setAddresses(res.data.data.addresses);
+            const sortedAddresses = res.data.data.addresses.sort((a: any, b: any) => (b.isDefault === true ? 1 : 0) - (a.isDefault === true ? 1 : 0));
+            setAddresses(sortedAddresses);
             setUser(res.data.data);
         } catch (err) {
             console.log(err)
@@ -52,6 +55,7 @@ const Profile = () => {
     // const { user } = useAuth();
     const [user, setUser]: any = useState(null);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [submitAddress, setSubmitAddress] = useState({
         fullName: '',
         street: '',
@@ -60,9 +64,9 @@ const Profile = () => {
         postalCode: '',
         phone: '',
         country: 'India',
-        // isDefault: false
+        isDefault: false
     })
-    const [addresses, setAddresses] = useState([]);
+    const [addresses, setAddresses] = useState<any[]>([]);
     const handleChangeAddress = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSubmitAddress({
             ...submitAddress,
@@ -72,33 +76,111 @@ const Profile = () => {
     useEffect(() => {
         getUserData();
     }, []);
+    // Run all these before loading
 
     const handleAddressSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // API calls and saving logic will be handled by the user later
-        // setIsAddressModalOpen(false);
-        // await api.post('/test-post', submitAddress);
-        const response = await api.post(ENDPOINTS.ADD_ADDRESS, submitAddress);
-        console.log(response.data);
-        if (response.data.code == "OK") {
-            setIsAddressModalOpen(false);
-            toast.success("Address added successfully");
-            setSubmitAddress({
-                fullName: '',
-                street: '',
-                city: '',
-                state: '',
-                postalCode: '',
-                phone: '',
-                country: 'India',
-                // isDefault: false
-            })
-            getUserData();
+
+        if (isEditing) {
+            const response = await api.post(ENDPOINTS.UPDATE_ADDRESS, { ...submitAddress, addressID: editAddressID });
+            console.log(response.data);
+            if (response.data.code == "OK") {
+                setIsAddressModalOpen(false);
+                toast.success("Address updated successfully");
+                setSubmitAddress({
+                    fullName: '',
+                    street: '',
+                    city: '',
+                    state: '',
+                    postalCode: '',
+                    phone: '',
+                    country: 'India',
+                    isDefault: false
+                })
+                getUserData();
+            } else {
+                toast.error("Failed to update address, Try Again");
+                toast.error(response.data.message);
+            }
+
+            // return;
         } else {
-            toast.error("Failed to add address, Try Again");
-            toast.error(response.data.message);
+            const response = await api.post(ENDPOINTS.ADD_ADDRESS, submitAddress);
+            console.log(response.data);
+            if (response.data.code == "OK") {
+                setIsAddressModalOpen(false);
+                toast.success("Address added successfully");
+                setSubmitAddress({
+                    fullName: '',
+                    street: '',
+                    city: '',
+                    state: '',
+                    postalCode: '',
+                    phone: '',
+                    country: 'India',
+                    isDefault: false
+                })
+                getUserData();
+            } else {
+                toast.error("Failed to add address, Try Again");
+                toast.error(response.data.message);
+            }
         }
+
+        // API calls and saving logic will be handled by the user later
+        setIsAddressModalOpen(false);
+        // await api.post('/test-post', submitAddress);
+
     };
+
+    const handleAddNewClick = () => {
+        setIsEditing(false);
+        setSubmitAddress({
+            fullName: '',
+            street: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            phone: '',
+            country: 'India',
+            isDefault: false
+        });
+        setIsAddressModalOpen(true);
+    };
+
+    const handleEditClick = (address: any) => {
+        setIsEditing(true);
+        setSubmitAddress({
+            fullName: address.fullName || '',
+            street: address.street || '',
+            city: address.city || '',
+            state: address.state || '',
+            postalCode: address.postalCode || '',
+            phone: address.phone || '',
+            country: address.country || 'India',
+            isDefault: address.isDefault || false
+        });
+        setIsAddressModalOpen(true);
+    };
+    const handleDeleteAddress = async (addressID: string) => {
+        try {
+            const response = await api.post(ENDPOINTS.DELETE_ADDRESS, { addressID });
+            if (response.data.code == "OK") {
+                toast.success("Address deleted successfully");
+                getUserData();
+            } else {
+                toast.error("Failed to delete address, Try Again");
+                toast.error(response.data.message);
+            }
+        } catch (error: any) {
+            toast.error("Failed to delete address, Try Again");
+            if (error.response && error.response.data && error.response.data.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error("An unexpected error occurred");
+            }
+        }
+    }
 
     if (!user) return <div className="p-20 text-center">Please login or check your internet connection</div>;
 
@@ -131,7 +213,7 @@ const Profile = () => {
                                 <MapPin className="text-primary" size={20} /> Saved Addresses
                             </h3>
                             <button
-                                onClick={() => setIsAddressModalOpen(true)}
+                                onClick={handleAddNewClick}
                                 className="text-primary hover:underline text-sm font-bold"
                             >
                                 + Add New
@@ -146,14 +228,22 @@ const Profile = () => {
                                             Default
                                         </span>
                                     )}
-                                    <p className="font-bold text-white mb-1">{addr.street}</p>
-                                    <p className="text-zinc-400 text-sm">{addr.city}, {addr.state} - {addr.postalCode}</p>
+                                    <p className="font-bold text-white mb-1">{addr.fullName}</p>
+                                    <p className="text-zinc-400 text-sm">{addr.street}, {addr.city}, {addr.state} - {addr.postalCode}</p>
                                     <p className="text-zinc-500 text-xs mt-3 flex items-center gap-1">
-                                        <Phone size={12} /> {addr.phone} - {addr.fullName}
+                                        <Phone size={12} /> {addr.phone} - {addr.country}
                                     </p>
 
-                                    <button className="absolute bottom-4 right-4 bg-zinc-800 p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button
+                                        onClick={() => { handleEditClick(addr); setEditAddressID(addr.addressID) }}
+                                        className="absolute bottom-4 right-4 bg-zinc-800 p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
                                         <Edit size={14} />
+                                    </button>
+                                    <button className="absolute bottom-4 right-12 bg-zinc-800 p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
+                                        onClick={() => { handleDeleteAddress(addr.addressID) }}
+                                    >
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
                             ))}
@@ -206,7 +296,7 @@ const Profile = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-surface border border-border rounded-xl w-full max-w-lg overflow-y-auto max-h-[90vh] shadow-2xl animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-border">
-                            <h2 className="text-xl font-bold text-white">Add New Address</h2>
+                            <h2 className="text-xl font-bold text-white">{isEditing ? 'Update Address' : 'Add New Address'}</h2>
                         </div>
 
                         <form onSubmit={handleAddressSubmit} className="p-6 space-y-4">
@@ -310,6 +400,21 @@ const Profile = () => {
                                 </div>
                             </div>
 
+                            <div
+                                className="flex items-center gap-3 cursor-pointer group"
+                                onClick={() => setSubmitAddress({ ...submitAddress, isDefault: !submitAddress.isDefault })}
+                            >
+                                <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${submitAddress.isDefault ? 'bg-primary' : 'bg-zinc-700'}`}>
+                                    <span
+                                        className={`${submitAddress.isDefault ? 'translate-x-6' : 'translate-x-1'
+                                            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                    />
+                                </div>
+                                <label className="text-sm text-zinc-400 cursor-pointer group-hover:text-white transition-colors">
+                                    Set as default address
+                                </label>
+                            </div>
+
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border mt-6">
                                 <button
                                     type="button"
@@ -322,7 +427,7 @@ const Profile = () => {
                                     type="submit"
                                     className="px-6 py-2 bg-primary hover:bg-primary/90 text-black font-bold rounded-lg text-sm transition-colors"
                                 >
-                                    Save Address
+                                    {isEditing ? 'Update Address' : 'Save Address'}
                                 </button>
                             </div>
                         </form>
