@@ -15,4 +15,5 @@ export const ENDPOINTS = {
     UPDATE_ADDRESS: '/update-user-address',
     TEST: "/test",
     DELETE_ADDRESS: '/delete-user-address',
+    GET_ADDRESSES: '/get-user-addresses'
 };

@@ -16,15 +16,19 @@ const PaymentSimulation = () => {
     const [amount, setAmount] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<'pending' | 'success' | 'failed'>('pending');
+    const [error, setError] = useState<any>(null)
 
     useEffect(() => {
         const fetchAmount = async () => {
             try {
                 const response = await api.get<TotalAmountResponse>(ENDPOINTS.TOTAL_AMOUNT(orderId!));
-                setAmount(response.data.totalAmount); // Verify if structure is correct
+                // console.log(response.data);
+                setAmount(response.data.message); // Verify if structure is correct
             } catch (error) {
-                console.error('Failed to fetch amount:', error);
-                toast.error('Could not load payment details');
+                // console.error('Failed to fetch amount:', error);
+                // console.log(error.response.data.message)
+                toast.error(error.response.data.message);
+                setError("Payment not allowed")
             } finally {
                 setLoading(false);
             }
@@ -62,10 +66,11 @@ const PaymentSimulation = () => {
 
     const handleAbort = async () => {
         try {
-            await api.post(ENDPOINTS.MOCK_PAYMENT_ABORT);
-            navigate('/');
+            console.log(orderId)
+            await api.post(ENDPOINTS.MOCK_PAYMENT_ABORT, { orderId });
+            navigate('/profile');
         } catch (error) {
-            navigate('/');
+            navigate('/profile');
         }
     };
 
@@ -114,7 +119,7 @@ const PaymentSimulation = () => {
                     </div>
                 </div>
 
-                <div className="p-8">
+                {!error && <div className="p-8">
                     <div className="text-center mb-8">
                         <p className="text-zinc-500 text-sm uppercase tracking-wide">Total Amount</p>
                         <h1 className="text-4xl font-bold mt-2">
@@ -147,7 +152,15 @@ const PaymentSimulation = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>}
+                {error && <div className="p-8">
+                    <div className="text-center mb-8">
+                        {/* <p className="text-zinc-500 text-sm uppercase tracking-wide">Total Amount</p> */}
+                        <h1 className="text-4xl font-bold mt-2">
+                            {error}
+                        </h1>
+                    </div>
+                </div>}
 
                 <div className="bg-zinc-50 p-4 text-center text-xs text-zinc-400 border-t">
                     This is a mock payment gateway for demonstration purposes.

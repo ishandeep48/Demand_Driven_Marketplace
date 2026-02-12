@@ -13,27 +13,31 @@ interface purchaseReq {
     quantity: number;
   }>;
   addressID: string;
-  paymentMethod: "card" | "upi" | "cod";
+  paymentMethod: "card" | "upi" | "cod"|"mock";
   notes?: string;
 }
 
 router.post("/purchase-product", async (req: Request, res: Response) => {
   try {
     const data: purchaseReq = req.body;
+    console.log(data)
     const userID: string = data.userID;
     const user = await User.findOne({userID});
+    if(!user){
+      throw new Error("No User")
+    }
     const addressID: string = data.addressID;
-    const address = await Addresses.findOne({ _id: addressID, user: userID });
+    const address = await Addresses.findOne({ addressID, user: user._id });
     const items = normalizeCartItems(data.items);
 
     //--------------------------------------------- Data Validation -------------------------------------------
     // Validate User Data
-    if (!user) {
-      return res.status(404).json({
-        code: "USR_NOT_FND",
-        message: "No user found for that user ID",
-      });
-    }
+    // if (!user) {
+    //   return res.status(404).json({
+    //     code: "USR_NOT_FND",
+    //     message: "No user found for that user ID",
+    //   });
+    // }
 
     if (!address) {
       console.log("No such address exists for this user");
@@ -47,11 +51,9 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
     const ProdIDs = items.map((it: any) => {
       return it.productID;
     });
-
     const products = await Products.find({
       _id: { $in: ProdIDs },
     });
-
     if (ProdIDs.length !== products.length) {
       return res.status(400).json({
         code: "PROD_NOT_FOUND",
@@ -68,12 +70,11 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
         });
       }
     }
-
+    //---------------------------------Quantity check----------------------------
     for (const item of items) {
       const product = products.find(
         (p: any) => p._id.toString() === item.productID,
       );
-
       if (!product) continue;
 
       if (product.stock < item.quantity) {
@@ -105,12 +106,13 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
         price: product.currentPrice,
       };
     });
+    // console.log(orderItems) //----------------------------------------------
     const totalAmount = orderItems.reduce((sum, it) => {
       return sum + it.price * it.quantity;
     }, 0);
-
+    // console.log(totalAmount)
     const order = new Order({
-      user: userID,
+      user: user._id,
       items: orderItems,
       shippingAddress: {
         fullName: address.fullName,
@@ -127,12 +129,13 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
       paymentStatus: "pending",
       orderedAt: Date.now(),
     });
+    // console.log(order)
 
-    const session = await Products.startSession();
-    session.startTransaction();
+    // const session = await Products.startSession();
+    // session.startTransaction();
 
     try {
-      await order.save({session});
+      await order.save({});
 
       const bulkOps = items.map((item) => ({
         updateOne: {
@@ -141,11 +144,11 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
         },
       }));
 
-      const result = await Products.bulkWrite(bulkOps,{session});
+      const result = await Products.bulkWrite(bulkOps,{});
 
       console.log(`Result for stock update is ${result}`)
-      await session.commitTransaction();
-      session.endSession();
+      // await session.commitTransaction();
+      // session.endSession();
       
       return res.status(201).json({
         code: "ORDER_CREATED",
@@ -154,8 +157,9 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
         paymentUrl: `/mock-payment/${order._id}`,
       });
     } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
+      // await session.abortTransaction();
+      // session.endSession();
+      console.log(err)
       return res.status(500).json({
         code:'ORDR_FAILED',
         message:"Some Issue at our end."
@@ -169,6 +173,7 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
     console.warn(
       `User Tried to buy a product and this is the error that was caused ${err}`,
     );
+    console.log(err);
     return res
       .status(500)
       .json({ code: "ERR", message: "some error on our end" });

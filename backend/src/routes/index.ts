@@ -5,6 +5,7 @@ import mockPayments from './mockPayment'
 import userAuth from './userAuth'
 import userActions from './userActions'
 import testing from './testing'
+import orderExtras from './orderExtras'
 export default function Routes(app : Express):void{
     app.use('/',productDetails);
     app.use('/',productActions);
@@ -12,4 +13,5 @@ export default function Routes(app : Express):void{
     app.use('/',userAuth);
     app.use('/',userActions)
     app.use('/',testing)
+    app.use('/',orderExtras)
 }

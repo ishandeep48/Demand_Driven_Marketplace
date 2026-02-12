@@ -1,46 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 import { ENDPOINTS } from '../api/endpoints';
 import type { Address, Product } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, MapPin, CheckCircle, Smartphone } from 'lucide-react';
+import { Loader2, MapPin, CheckCircle, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const MOCK_ADDRESSES: Address[] = [
-    {
-        id: 'addr_1',
-        street: '123 Silicon Valley Rd',
-        city: 'Bangalore',
-        state: 'Karnataka',
-        zip: '560100',
-        isDefault: true,
-        phone: '+91 98765 43210'
-    },
-    {
-        id: 'addr_2',
-        street: '456 Cyber Hub',
-        city: 'Gurgaon',
-        state: 'Haryana',
-        zip: '122002',
-        isDefault: false,
-        phone: '+91 99887 76655'
-    }
-];
 
 const Checkout = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [selectedAddress, setSelectedAddress] = useState<string>(MOCK_ADDRESSES[0].id);
     const [processing, setProcessing] = useState(false);
+    const [addresses, setAddresses] = useState([{
+        addressID: '',
+        city: '',
+        country: '',
+        fullName: '',
+        isDefault: '',
+        phone: '',
+        postalCode: '',
+        state: '',
+        street: ''
+    }])
+    const [selectedAddress, setSelectedAddress] = useState<string>(addresses[0].addressID);
+    const getAddress = async () => {
+        try {
+            const response = await api.get(ENDPOINTS.GET_ADDRESSES);
+            // console.log(response.data.message);
+            if (response.data.code === 'OK') {
+                setAddresses(response.data.message);
+                const selectedID = response.data.message.find(addr => addr.isDefault)
+                setSelectedAddress(selectedID.addressID)
+            }
+        } catch (err) {
+            toast('Couldnt Load Your Addresses')
+        }
+    }
+    useEffect(() => {
+        getAddress();
 
+    }, [])
     // Fetch product details again for the summary
     const { data: product, isLoading } = useQuery({
         queryKey: ['product', id],
         queryFn: async () => {
             const response = await api.get<{ data: Product }>(ENDPOINTS.PRODUCT_DETAILS(id!));
+            // console.log(response);
             return response.data.data;
         },
         enabled: !!id,
@@ -51,13 +59,14 @@ const Checkout = () => {
         setProcessing(true);
 
         try {
+            console.log(user);
             const payload = {
-                userID: user.id, // In a real app auth might inject this on backend, or we send it
+                userID: user.userID, // In a real app auth might inject this on backend, or we send it
                 items: [
-                    { productID: product.id, quantity: 1 } // Simplified single item checkout
+                    { productID: product._id, quantity: 1 } // Simplified single item checkout
                 ],
                 addressID: selectedAddress,
-                paymentMethod: 'card'
+                paymentMethod: 'mock'
             };
 
             const response = await api.post(ENDPOINTS.PURCHASE, payload);
@@ -104,30 +113,30 @@ const Checkout = () => {
                             <MapPin className="text-primary" /> Select Delivery Address
                         </h2>
                         <div className="space-y-4">
-                            {MOCK_ADDRESSES.map((addr) => (
+                            {addresses.map((addr) => (
                                 <div
-                                    key={addr.id}
-                                    onClick={() => setSelectedAddress(addr.id)}
-                                    className={`relative cursor-pointer border rounded-xl p-5 transition-all ${selectedAddress === addr.id
+                                    key={addr.addressID}
+                                    onClick={() => setSelectedAddress(addr.addressID)}
+                                    className={`relative cursor-pointer border rounded-xl p-5 transition-all ${selectedAddress === addr.addressID
                                         ? 'bg-primary/5 border-primary ring-1 ring-primary/50'
                                         : 'bg-surface border-border hover:border-zinc-600'
                                         }`}
                                 >
-                                    {selectedAddress === addr.id && (
+                                    {selectedAddress === addr.addressID && (
                                         <div className="absolute top-4 right-4 text-emerald-500">
                                             <CheckCircle size={20} fill="currentColor" className="text-black" />
                                         </div>
                                     )}
 
                                     <div className="flex items-start gap-3">
-                                        <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center ${selectedAddress === addr.id ? 'border-primary' : 'border-zinc-500'}`}>
-                                            {selectedAddress === addr.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center ${selectedAddress === addr.addressID ? 'border-primary' : 'border-zinc-500'}`}>
+                                            {selectedAddress === addr.addressID && <div className="w-2 h-2 rounded-full bg-primary" />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-white">{addr.street}</p>
-                                            <p className="text-zinc-400">{addr.city}, {addr.state} - {addr.zip}</p>
+                                            <p className="font-bold text-white">{addr.fullName}</p>
+                                            <p className="text-zinc-400">{addr.street}, {addr.city}, {addr.state} - {addr.postalCode}</p>
                                             <p className="text-zinc-500 text-sm mt-2 flex items-center gap-1">
-                                                <Smartphone size={14} /> {addr.phone}
+                                                <Phone size={14} /> {addr.phone}
                                             </p>
                                         </div>
                                     </div>
@@ -148,7 +157,7 @@ const Checkout = () => {
                         </div>
                         <div className="flex justify-between text-zinc-400">
                             <span>Shipping</span>
-                            <span className="text-emerald-500">Free</span>
+                            <span className="text-emerald-500">Free (For Now)</span>
                         </div>
                         <div className="h-px bg-border my-2" />
                         <div className="flex justify-between text-white font-bold text-lg">
