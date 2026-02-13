@@ -21,7 +21,7 @@ router.get(
           select: "-_id -user",
         })
         .select("-_id name email addresses");
-      console.log(user);
+      // console.log(user);
       return res.status(200).json({ data: user });
       //please fix and make this api good . dont forget this aint done yet no error handlign has been done
     } catch (err) {

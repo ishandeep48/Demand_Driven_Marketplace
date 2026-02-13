@@ -4,6 +4,8 @@ import User from "../models/Users";
 import Addresses from "../models/Addresses";
 import Order from "../models/Orders";
 import { normalizeCartItems } from "../controllers/ProductVal";
+import randomNumber from "../controllers/randNum";
+import { random } from "nanoid";
 const router = express.Router();
 
 interface purchaseReq {
@@ -128,6 +130,7 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
       orderStatus: "pending",
       paymentStatus: "pending",
       orderedAt: Date.now(),
+      orderID: randomNumber(),
     });
     // console.log(order)
 

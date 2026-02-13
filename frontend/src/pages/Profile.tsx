@@ -7,27 +7,27 @@ import toast from 'react-hot-toast';
 import { sub } from 'framer-motion/client';
 
 // Mock Orders as API is not ready
-const MOCK_ORDERS: Order[] = [
-    {
-        id: 'ord_123',
-        date: '2023-10-25T10:30:00Z',
-        status: 'completed',
-        totalAmount: 45000 / 83, // Approx $542
-        items: [
-            { productName: 'RTX 4060', quantity: 1, price: 45000 / 83 }
-        ]
-    },
-    {
-        id: 'ord_124',
-        date: '2023-10-20T14:15:00Z',
-        status: 'pending',
-        totalAmount: 120000 / 83, // Approx $1445
-        items: [
-            { productName: 'i9-14900K', quantity: 1, price: 55000 / 83 },
-            { productName: 'Z790 Motherboard', quantity: 1, price: 65000 / 83 }
-        ]
-    }
-];
+// const MOCK_ORDERS: Order[] = [
+//     {
+//         id: 'ord_123',
+//         date: '2023-10-25T10:30:00Z',
+//         status: 'completed',
+//         totalAmount: 45000 / 83, // Approx $542
+//         items: [
+//             { productName: 'RTX 4060', quantity: 1, price: 45000 / 83 }
+//         ]
+//     },
+//     {
+//         id: 'ord_124',
+//         date: '2023-10-20T14:15:00Z',
+//         status: 'pending',
+//         totalAmount: 120000 / 83, // Approx $1445
+//         items: [
+//             { productName: 'i9-14900K', quantity: 1, price: 55000 / 83 },
+//             { productName: 'Z790 Motherboard', quantity: 1, price: 65000 / 83 }
+//         ]
+//     }
+// ];
 
 const INDIAN_STATES = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
@@ -40,14 +40,18 @@ const INDIAN_STATES = [
 
 const Profile = () => {
     const [editAddressID, setEditAddressID] = useState(null);
+    const [orders, setOrders] = useState(null);
     const getUserData = async () => {
         try {
             const res = await api.get(ENDPOINTS.GET_USER_BY_ID);
+            const order_res = await api.get(ENDPOINTS.GET_ORDERS);
             // console.log(res.data.data);
             console.log(res.data.data)
+            console.log('orders are ', order_res.data.data);
             const sortedAddresses = res.data.data.addresses.sort((a: any, b: any) => (b.isDefault === true ? 1 : 0) - (a.isDefault === true ? 1 : 0));
             setAddresses(sortedAddresses);
             setUser(res.data.data);
+            setOrders(order_res.data.data);
         } catch (err) {
             console.log(err)
         }
@@ -66,6 +70,7 @@ const Profile = () => {
         country: 'India',
         isDefault: false
     })
+
     const [addresses, setAddresses] = useState<any[]>([]);
     const handleChangeAddress = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSubmitAddress({
@@ -259,22 +264,22 @@ const Profile = () => {
                         </h3>
 
                         <div className="space-y-4">
-                            {MOCK_ORDERS.map(order => (
-                                <div key={order.id} className="bg-background/50 border border-border rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {orders.map(order => (
+                                <div key={order.orderID} className="bg-background/50 border border-border rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="font-mono text-sm text-zinc-500">#{order.id}</span>
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${order.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                order.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'
+                                            <span className="font-mono text-sm text-zinc-500">#{order.orderID}</span>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${order.orderStatus === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                order.orderStatus === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : order.orderStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
                                                 }`}>
-                                                {order.status}
+                                                {order.orderStatus}
                                             </span>
                                         </div>
                                         <p className="text-zinc-400 text-sm mb-1">
-                                            {new Date(order.date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                            {new Date(order.orderedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                                         </p>
                                         <p className="text-white text-sm">
-                                            {order.items.map(i => `${i.productName} (x${i.quantity})`).join(', ')}
+                                            {order.items.map(i => `${i.product.name} (x${i.quantity})`).join(', ')}
                                         </p>
                                     </div>
 
