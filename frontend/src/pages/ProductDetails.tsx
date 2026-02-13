@@ -137,10 +137,20 @@ const ProductDetails = () => {
                     <div className="flex gap-4 pt-4">
                         <button
                             disabled={product.stock === 0}
+                            onClick={() => {
+                                console.log('Add to cart logic here - Call cart endpoint');
+                                // TODO: Add logic to add to cart endpoint here
+                            }}
+                            className="flex-1 bg-zinc-800 text-white font-bold text-lg py-4 rounded-xl hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all border border-zinc-700 flex items-center justify-center gap-2"
+                        >
+                            <ShoppingCart size={20} /> Add to Cart
+                        </button>
+                        <button
+                            disabled={product.stock === 0}
                             onClick={handleBuyNow}
                             className="flex-1 bg-white text-black font-bold text-lg py-4 rounded-xl hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-white/5 active:scale-95 flex items-center justify-center gap-2"
                         >
-                            <ShoppingCart size={20} /> Buy Now
+                            <Zap size={20} /> Buy Now
                         </button>
                     </div>
                 </div>

@@ -10,7 +10,13 @@ then make them allow orders
 
 
 
-after its done show it in  order history also make it such that if we click and order we getits detail -- TBD NEXT
+after its done show it in  order history also make it such that if we click and order we getits detail -- DONE
+
+NEXT
+fix the logic of where if the payment fails or abort or whatever then increase the stock(inventory) value again 
+make the endpoint of cart . 
+make checkout work with cart .
+make an option of increasing decreasing quantity in normal purchase
 
 
 also man fk AI . i could have done this myself and it would have been better. from next time only ask ai to generate the layout of frotend with the css classes and done ask it to make the logics in the frontend too this was a big mistake . This little maneuvers gonna cost us another 50 years

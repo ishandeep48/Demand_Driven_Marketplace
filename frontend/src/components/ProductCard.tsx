@@ -80,7 +80,15 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
                             <TrendingUp size={14} className={cn("transition-colors", product.demandScore > 80 ? "text-rose-400" : "text-zinc-500")} />
                             <span className="text-xs text-zinc-500">Demand Score: <span className="text-zinc-300">{product.demandScore}%</span></span>
                         </div>
-                        <button className="p-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Add to cart logic here - Call cart endpoint');
+                                // TODO: Add logic to add to cart endpoint here
+                            }}
+                            className="p-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center z-10 relative"
+                        >
                             <ShoppingCart size={18} />
                         </button>
                     </div>

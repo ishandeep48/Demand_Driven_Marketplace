@@ -50,7 +50,7 @@ router.get(
             select:'_id orderID name category'
          })
         .select("-user -paymentStatus -createdAt -updatedAt");
-      console.log(orders);
+      console.log(orders[0].items);
          return res.status(200).json({
             code:"OK",
             message:"Successfully retrieved orders",

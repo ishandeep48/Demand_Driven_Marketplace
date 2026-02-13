@@ -1,10 +1,9 @@
-import type { Order } from '../types';
-import { Mail, MapPin, Package, Phone, Edit, Trash2 } from 'lucide-react';
+import { Mail, MapPin, Package, Phone, Edit, Trash2, X, ChevronRight, ExternalLink } from 'lucide-react';
 import api from '../api/axios';
 import { ENDPOINTS } from '../api/endpoints';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { sub } from 'framer-motion/client';
+import { useNavigate } from 'react-router-dom';
 
 // Mock Orders as API is not ready
 // const MOCK_ORDERS: Order[] = [
@@ -40,7 +39,11 @@ const INDIAN_STATES = [
 
 const Profile = () => {
     const [editAddressID, setEditAddressID] = useState(null);
-    const [orders, setOrders] = useState(null);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+    const navigate = useNavigate();
+
     const getUserData = async () => {
         try {
             const res = await api.get(ENDPOINTS.GET_USER_BY_ID);
@@ -265,7 +268,14 @@ const Profile = () => {
 
                         <div className="space-y-4">
                             {orders.map(order => (
-                                <div key={order.orderID} className="bg-background/50 border border-border rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div
+                                    key={order.orderID}
+                                    onClick={() => {
+                                        setSelectedOrder(order);
+                                        setIsOrderModalOpen(true);
+                                    }}
+                                    className="bg-background/50 border border-border rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:border-zinc-600 transition-all group"
+                                >
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
                                             <span className="font-mono text-sm text-zinc-500">#{order.orderID}</span>
@@ -287,7 +297,9 @@ const Profile = () => {
                                         <p className="text-lg font-bold font-mono text-white">
                                             {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(order.totalAmount * 83)}
                                         </p>
-                                        <button className="mt-2 text-sm text-primary hover:underline">View Invoice</button>
+                                        <div className="mt-2 text-sm text-primary group-hover:underline flex items-center justify-end gap-1">
+                                            Click here to view order <ChevronRight size={14} />
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -436,6 +448,116 @@ const Profile = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Order Details Modal */}
+            {isOrderModalOpen && selectedOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-surface border border-border rounded-xl w-full max-w-2xl overflow-y-auto max-h-[90vh] shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-surface z-10">
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Order Details</h2>
+                                <p className="text-zinc-400 text-sm font-mono">#{selectedOrder.orderID}</p>
+                            </div>
+                            <button
+                                onClick={() => setIsOrderModalOpen(false)}
+                                className="text-zinc-400 hover:text-white transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-8">
+                            {/* Order Status & Date */}
+                            <div className="flex flex-wrap gap-4 justify-between items-center bg-background/30 p-4 rounded-lg border border-border/50">
+                                <div>
+                                    <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Order Date</p>
+                                    <p className="text-white font-medium">
+                                        {new Date(selectedOrder.orderedAt).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Status</p>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider ${selectedOrder.orderStatus === 'completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                        selectedOrder.orderStatus === 'pending' ? 'bg-yellow-500/10 text-yellow-500' :
+                                            selectedOrder.orderStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                'bg-red-500/10 text-red-500'
+                                        }`}>
+                                        {selectedOrder.orderStatus}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p className="text-zinc-400 text-xs uppercase tracking-wider mb-1">Payment Method</p>
+                                    <p className="text-white font-medium capitalize">{selectedOrder.paymentMethod}</p>
+                                </div>
+                            </div>
+
+                            {/* Shipping Address */}
+                            <div>
+                                <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <MapPin size={16} className="text-primary" /> Shipping Address
+                                </h3>
+                                <div className="bg-background/30 p-4 rounded-lg border border-border/50">
+                                    <p className="text-white font-bold text-lg mb-1">{selectedOrder.shippingAddress.fullName}</p>
+                                    <p className="text-zinc-300">{selectedOrder.shippingAddress.street}</p>
+                                    <p className="text-zinc-300">
+                                        {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} - {selectedOrder.shippingAddress.postalCode}
+                                    </p>
+                                    <p className="text-zinc-300">{selectedOrder.shippingAddress.country}</p>
+                                    <p className="text-zinc-400 text-sm mt-2 flex items-center gap-2">
+                                        <Phone size={14} /> {selectedOrder.shippingAddress.phone}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Order Items */}
+                            <div>
+                                <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <Package size={16} className="text-primary" /> Order Items
+                                </h3>
+                                <div className="space-y-3">
+                                    {selectedOrder.items.map((item: any) => (
+                                        <div
+                                            key={item._id}
+                                            onClick={() => {
+                                                setIsOrderModalOpen(false);
+                                                navigate(`/product/${item.product._id}`);
+                                            }}
+                                            className="flex items-center justify-between p-4 bg-background/30 border border-border/50 rounded-lg hover:border-primary/50 cursor-pointer transition-all group"
+                                        >
+                                            <div>
+                                                <p className="text-white font-bold group-hover:text-primary transition-colors flex items-center gap-2">
+                                                    {item.product.name}
+                                                    <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </p>
+                                                <p className="text-zinc-500 text-xs">{item.product.category}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-zinc-400 text-sm">Qty: {item.quantity}</p>
+                                                <p className="text-white font-mono font-bold">
+                                                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(item.price * 83)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Footer - Total & Invoice */}
+                            <div className="pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+                                <button className="w-full md:w-auto px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <Mail size={16} /> View Invoice
+                                </button>
+                                <div className="text-right w-full md:w-auto">
+                                    <p className="text-zinc-400 text-sm">Total Amount</p>
+                                    <p className="text-2xl font-bold font-mono text-primary">
+                                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(selectedOrder.totalAmount * 83)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

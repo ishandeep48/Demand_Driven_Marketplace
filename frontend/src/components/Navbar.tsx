@@ -1,4 +1,4 @@
-import { Zap, Search, User, LogOut } from 'lucide-react';
+import { Zap, Search, User, LogOut, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -43,6 +43,10 @@ const Navbar = () => {
 
                     {isAuthenticated ? (
                         <div className="flex items-center gap-4">
+                            <Link to="/cart" className="text-zinc-400 hover:text-white transition-colors relative">
+                                <ShoppingCart size={20} />
+                                {/* Optional: Add badge for cart count later */}
+                            </Link>
                             <Link to="/profile" className="text-sm font-medium text-zinc-300 hover:text-white flex items-center gap-2">
                                 <User size={18} />
                                 <span className="hidden sm:inline">{user?.name}</span>

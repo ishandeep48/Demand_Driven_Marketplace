@@ -8,6 +8,7 @@ import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
 import PaymentSimulation from './pages/PaymentSimulation';
 import Profile from './pages/Profile';
+import Cart from './pages/Cart';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -51,6 +52,11 @@ function App() {
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/cart" element={
+                <ProtectedRoute>
+                  <Cart />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<Home />} />
