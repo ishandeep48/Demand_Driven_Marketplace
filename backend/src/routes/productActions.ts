@@ -31,6 +31,7 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
     const addressID: string = data.addressID;
     const address = await Addresses.findOne({ addressID, user: user._id });
     const items = normalizeCartItems(data.items);
+    console.log(items);
 
     //--------------------------------------------- Data Validation -------------------------------------------
     // Validate User Data
@@ -140,16 +141,16 @@ router.post("/purchase-product", async (req: Request, res: Response) => {
     try {
       await order.save({});
 
-      const bulkOps = items.map((item) => ({
-        updateOne: {
-          filter: { _id: item.productID , stock:{$gte:item.quantity} },
-          update: { $inc: { stock: -item.quantity } },
-        },
-      }));
+      // const bulkOps = items.map((item) => ({
+      //   updateOne: {
+      //     filter: { _id: item.productID , stock:{$gte:item.quantity} },
+      //     update: { $inc: { stock: -item.quantity } },
+      //   },
+      // }));
 
-      const result = await Products.bulkWrite(bulkOps,{});
+      // const result = await Products.bulkWrite(bulkOps,{});
 
-      console.log(`Result for stock update is ${result}`)
+      // console.log(`Result for stock update is ${result}`)
       // await session.commitTransaction();
       // session.endSession();
       

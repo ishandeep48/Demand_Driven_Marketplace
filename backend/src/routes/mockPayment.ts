@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import authCookieVerify from "../controllers/authCookieVerify";
 import Order from "../models/Orders";
 import Users from "../models/Users";
+import Products from "../models/Products";
 import { userRequest } from "../interfaces";
 const router = express.Router();
 
@@ -59,12 +60,14 @@ router.post(
       const orderId = req.body.orderId;
       const user = await Users.findOne({ userID: req.user.userID });
       const order = await Order.findById(orderId);
+     
       if (!order || !user) {
         return res.status(404).json({
           code: "ORDER_NOT_FND",
           message: "Not for found for that ID",
         });
       }
+       console.log(order.items);
       if (order.user.toString() != user._id.toString()) {
         return res.status(403).json({
           code: "USER_MISMATCH",
@@ -81,6 +84,21 @@ router.post(
       order.orderStatus = "paid";
 
       await order.save();
+// --------------------------------------------------------------
+
+// DO this in transactions later
+      const bulkOps = order.items.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product , stock:{$gte:item.quantity} },
+          update: { $inc: { stock: -item.quantity } },
+        },
+      }));
+
+      const result = await Products.bulkWrite(bulkOps,{});
+
+      console.log(`Result for stock update is ${result}`)
+
+
 
       return res.status(200).json({
         code: "PAYMENT_SUCCESS",
